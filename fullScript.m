@@ -61,16 +61,16 @@ for dir = 1:2
         PID(PID==33) = []; %niet gemeten wegens technische problemen
         PID(PID==34) = []; %niet gemeten wegens technische problemen
     end
-% 
+% 3,19,21
 % PID 25 L is traag maar wel heel snel bij tweede bocht?
 for pIdx = 1:size(PID,2) %11:32 %
 % % subjectNum = 47;
 % 
-% try
+try
 subjectNum = PID(pIdx);
 disp(subjectNum)
 % for subjectNum = 1:1
-clearvars -except trialName trialDir subjectNum PID f
+clearvars -except trialName trialDir subjectNum PID f fullData
 if strcmp(trialName,'arrowhead') == 1 %trialName == 'arrowhead'
     trialAbbrev = 'AH';
     if subjectNum >= 1 && subjectNum <= 10 %monday morning
@@ -107,12 +107,11 @@ vid = VideoReader(vFile);
 
 % strcat('D:\GP\Output\output_jsons\testing-days\',test,'\cam',num2str(camNums(k)),'\PID-',num2str(subjectNum),'-AH-',trialDir)
 
-% For all camera's k, do:
+% For all camera's k:
 for k = 1:length(camNums)
    initCals(:,k) = load(strcat('initCalibrationSessionCam',num2str(camNums(k)),'.mat'));
 
    % Load specified camera and trial data into workspace
-   % cameraParams(:,k) = load(strcat('initialCalibrationSessionCam',num2str(camNums(k)),'.mat'));
    inputFiles(:,k) = dir(strcat('D:\GP\Output\output_jsons\testing-days\',trialName,'\cam',num2str(camNums(k)),'\PID-',sprintf('%02d', subjectNum),'-',trialAbbrev,'-',trialDir));
    
    % For each JSON file (containing the pose keypoints within one frame of a video), load the path and file names
@@ -333,14 +332,14 @@ posY2(:,1:del) = [];
 % posX2_(:,1:del) = [];
 % posY2_(:,1:del) = [];
 
-% for i = 1:size(pos,1)
-%     pos1undistorted = undistortPoints([posX1(i,:)' posY1(i,:)'],initCals(1).calibrationSession.CameraParameters);
-%     pos2undistorted = undistortPoints([posX2(i,:)' posY2(i,:)'],initCals(2).calibrationSession.CameraParameters);
-%     posX1(i,:) = pos1undistorted(:,1)';
-%     posY1(i,:) = pos1undistorted(:,2)';
-%     posX2(i,:) = pos2undistorted(:,1)';
-%     posY2(i,:) = pos2undistorted(:,2)';
-% end
+for i = 1:size(pos,1)
+    pos1undistorted = undistortPoints([posX1(i,:)' posY1(i,:)'],initCals(1).calibrationSession.CameraParameters);
+    pos2undistorted = undistortPoints([posX2(i,:)' posY2(i,:)'],initCals(2).calibrationSession.CameraParameters);
+    posX1(i,:) = pos1undistorted(:,1)';
+    posY1(i,:) = pos1undistorted(:,2)';
+    posX2(i,:) = pos2undistorted(:,1)';
+    posY2(i,:) = pos2undistorted(:,2)';
+end
 
 %%
 
@@ -679,15 +678,16 @@ idx_end = locs+pks;
 % plot(time(idx_start:idx_end),accelerationCoM(idx_start:idx_end),'Color','#EF4136','LineStyle','-','LineWidth',1)
 % % xline([time(idx_start) time(idx_end)])
 
-WX = WX(idx_start:idx_end,:);
-WY = WY(idx_start:idx_end,:);
-WZ = WZ(idx_start:idx_end,:);
-pos = pos(idx_start:idx_end,:);
-centerofmass = centerofmass(idx_start:idx_end,:);
-posX1 = posX1(idx_start:idx_end,:);
-posY1 = posY1(idx_start:idx_end,:);
-posX2 = posX2(idx_start:idx_end,:);
-posY2 = posY2(idx_start:idx_end,:);
+% WX = WX(idx_start:idx_end,:);
+% WY = WY(idx_start:idx_end,:);
+% WZ = WZ(idx_start:idx_end,:);
+% pos = pos(idx_start:idx_end,:);
+% centerofmass_ = centerofmass;
+% centerofmass = centerofmass(idx_start:idx_end,:);
+% posX1 = posX1(idx_start:idx_end,:);
+% posY1 = posY1(idx_start:idx_end,:);
+% posX2 = posX2(idx_start:idx_end,:);
+% posY2 = posY2(idx_start:idx_end,:);
 
 % Calculating speed and acceleration of joints with the purpose of foot ground contact time
 
@@ -757,7 +757,7 @@ for j = 1:length(events_openpose.locs_lhs_filt)
             temp_idx = find(locs_lto == toeoffs(i));
             if pks_lto(temp_idx) > highestTO
                 highestTO = pks_lto(temp_idx);
-                temp_loc = locs_lto(temp_idx);
+                temp_loc = locs_lto(temp_idx);  
                 temp_pks = pks_lto(temp_idx);
             end
         end
@@ -1196,6 +1196,10 @@ agilityPredictors.rangeOfMotion.ankle.diff = abs(agilityPredictors.rangeOfMotion
 
 %%
 
+agilityParams.hipAnglesLowMidHigh(agilityParams.hipAnglesLowMidHigh == 0) = 0.1;
+agilityParams.kneeAnglesLowMidHigh(agilityParams.hipAnglesLowMidHigh == 0) = 0.1;
+agilityParams.ankleAnglesLowMidHigh(agilityParams.hipAnglesLowMidHigh == 0) = 0.1;
+
 %knee range of motion
 agilityPredictors.disbalance.knee.LowRangeDisbalance = ...
     2*((abs(agilityParams.kneeAnglesLowMidHigh(1,1)-mean(agilityParams.kneeAnglesLowMidHigh(1,:))))/sum(agilityParams.kneeAnglesLowMidHigh(1,:)));
@@ -1215,6 +1219,15 @@ agilityPredictors.disbalance.hip.MidRangeDisbalance = ...
     2*((abs(agilityParams.hipAnglesLowMidHigh(2,1)-mean(agilityParams.hipAnglesLowMidHigh(2,:))))/sum(agilityParams.hipAnglesLowMidHigh(2,:)));
 agilityPredictors.disbalance.hip.HighRangeDisbalance = ...
     2*((abs(agilityParams.hipAnglesLowMidHigh(3,1)-mean(agilityParams.hipAnglesLowMidHigh(3,:))))/sum(agilityParams.hipAnglesLowMidHigh(3,:)));
+%%
+% agilityParams.hipAnglesLowMidHigh(agilityParams.hipAnglesLowMidHigh == 0) = 0.1;
+
+%%
+% agilityPredictors.disbalance.hip.LowRangeTest = ...
+%     2*((abs(agilityParams.hipAnglesLowMidHigh(1,1)-mean(agilityParams.hipAnglesLowMidHigh(1,:))))/sum(agilityParams.hipAnglesLowMidHigh(1,:)));
+
+
+%%
 
 agilityPredictors.disbalance.hip.LowRangeDisbalance(isnan(agilityPredictors.disbalance.hip.LowRangeDisbalance))=0;
 agilityPredictors.disbalance.hip.MidRangeDisbalance(isnan(agilityPredictors.disbalance.hip.MidRangeDisbalance))=0;
@@ -1241,6 +1254,17 @@ agilityPredictors.acceleration.maxAcceleration = max(accelerationCoM(idx_start:i
 accelerationCoM_filt = accelerationCoM(idx_start:idx_end);
 agilityPredictors.acceleration.meanPosAcceleration = mean(accelerationCoM_filt(accelerationCoM_filt > 0));
 agilityPredictors.acceleration.meanNegAcceleration = mean(accelerationCoM_filt(accelerationCoM_filt < 0));
+
+%%
+% close all
+% figure("WindowState","maximized");
+% hold on
+% plot(velocityCoM,'r')
+% plot(idx_start:1:idx_end,velocityCoM(idx_start:idx_end),'b')
+% yline(mean(velocityCoM(idx_start:idx_end)),'b')
+% yline(mean(velocityCoM(100:idx_end)),'r')
+
+
 %%
 
 % accelerationCoM_filt = accelerationCoM(idx_start:idx_end);
@@ -1510,12 +1534,17 @@ newRow = { ...
 
 % Append the new row to the existing data
 updatedData = [existingData; newRow];
+%%
+
+%%
 
 % Write the updated data to the Excel file
 writetable(updatedData, "D:\GP\modelData.xlsx");
-
-% f = figure;
+%%
+% f = figure('WindowState','maximized');
 % f('WindowState','maximized');
+
+% lineColor = 'r';
 % hold on
 % grid on
 % 
@@ -1528,27 +1557,63 @@ writetable(updatedData, "D:\GP\modelData.xlsx");
 % title('Running pattern')
 % plot([-10000 10000],[0 0],'k-');
 % 
-% plot(centerofmass(:,1),centerofmass(:,2),'y.','MarkerSize',2);
+% % plot(centerofmass_(:,1),centerofmass_(:,2)-thresholdX,'y.','MarkerSize',2);
+% plot(centerofmass_(:,1),centerofmass_(:,2),'y.','MarkerSize',2);
+% plot([0,0],[0,4000],'b-')
+% plot([-750,750],[4000,4000],'b-')
+% yline(8200)
 % 
 % for i = idx_start:idx_end
-%     % plot(centerofmass(i,1),centerofmass(i,2)-thresholdX,'Color',[i/size(pos,1) (size(pos,1)-i)/size(pos,1) 1 0.2],'Marker','.','MarkerSize',2);
-%     plot(centerofmass(i,1),centerofmass(i,2),'Color',lineColor,'Marker','.','MarkerSize',2);
+%     % plot(centerofmass_(i,1),centerofmass_(i,2)-thresholdX,'Color',lineColor,'Marker','.','MarkerSize',2);
+%     plot(centerofmass_(i,1),centerofmass_(i,2),'Color',lineColor,'Marker','.','MarkerSize',2);
 %     % while waitforbuttonpress ~= 1
 %     % end
 % end
 % 
 % axis square equal
 
+% comMatrix = [centerofmass(:,1), centerofmass(:,2), centerofmass(:,3)]; 
+% comX = centerofmass(:,1);
+% comY = centerofmass(:,2);
+% comZ = centerofmass(:,3);
+
+% newVariableName = sprintf('PID%02d', subjectNum);
+% if strcmp(trialDir,'L') == 1
+%     fullData.(newVariableName).left.centerofmass = centerofmass_;
+%     fullData.(newVariableName).left.velocity = velocityCoM;
+%     fullData.(newVariableName).left.acceleration = accelerationCoM;
+%     fullData.(newVariableName).left.time = time;
+%     fullData.(newVariableName).left.idx_start = idx_start;
+%     fullData.(newVariableName).left.idx_end = idx_end;
+% elseif strcmp(trialDir,'R') == 1
+%     fullData.(newVariableName).right.centerofmass = centerofmass_;
+%     fullData.(newVariableName).right.velocity = velocityCoM;
+%     fullData.(newVariableName).right.acceleration = accelerationCoM;
+%     fullData.(newVariableName).right.time = time;
+%     fullData.(newVariableName).right.idx_start = idx_start;
+%     fullData.(newVariableName).right.idx_end = idx_end;
+% end
+% eval([newVariableName ' = centerofmass']);
+
+% fullData.centerofmass.X(subjectNum,:) = comX;
+% fullData.centerofmass.Y(subjectNum,:) = comY;
+% fullData.centerofmass.Z(subjectNum,:) = comZ;
+
+% fullData.centerofmass.
+%%
 % while waitforbuttonpress ~= 1
 % end
 
-% catch
-%     continue
-% end 
+catch
+    continue
+end
+
 end
 end
 
 winopen("D:\GP\modelData.xlsx")
 
-
 toc
+
+%%
+% save("fullDataVars.mat","fullData")
